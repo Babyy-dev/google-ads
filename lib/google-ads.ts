@@ -49,16 +49,15 @@ class GoogleAdsService {
     });
   }
 
-  // UPDATED FUNCTION DEFINITION
   async connectToCustomer(
     customerId: string,
     refreshToken: string,
-    loginCustomerId?: string // This makes the 3rd argument optional
+    loginCustomerId?: string
   ): Promise<void> {
     try {
       this.customer = this.client.Customer({
         customer_id: customerId,
-        login_customer_id: loginCustomerId, // It's now correctly used here
+        login_customer_id: loginCustomerId,
         refresh_token: refreshToken,
       });
 
@@ -80,9 +79,9 @@ class GoogleAdsService {
     if (!this.customer) throw new Error("Customer not connected.");
     try {
       const results = await this.customer.query(`
-        SELECT 
+        SELECT
           segments.date, segments.hour, segments.device,
-          geographic_view.country_criterion_id, metrics.clicks, 
+          geographic_view.country_criterion_id, metrics.clicks,
           metrics.impressions, metrics.cost_micros, metrics.conversions
         FROM geographic_view
         WHERE segments.date DURING ${dateRange}
@@ -107,7 +106,7 @@ class GoogleAdsService {
     if (!this.customer) throw new Error("Customer not connected.");
     try {
       const results = await this.customer.query(`
-            SELECT 
+            SELECT
                 campaign.name, campaign_budget.amount_micros,
                 metrics.cost_micros, metrics.clicks, metrics.impressions,
                 segments.date

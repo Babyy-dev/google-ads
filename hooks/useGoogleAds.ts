@@ -10,7 +10,7 @@ export interface GoogleAdsAccount {
 }
 
 export interface FraudAnalysis {
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: "low" | "medium" | "high";
   totalAlerts: number;
   highRiskAlerts: number;
   mediumRiskAlerts: number;
@@ -39,185 +39,200 @@ export function useGoogleAds() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock Google OAuth for now (will implement proper OAuth in Milestone 4)
-  const connectGoogleAds = useCallback(async (): Promise<GoogleAdsAccount[]> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // For now, return mock data since we need OAuth setup
-      // In Milestone 4, this will trigger actual Google OAuth flow
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-
-      const mockAccounts: GoogleAdsAccount[] = [
-        {
-          customerId: "1234567890",
-          name: "Demo Account - Digital Marketing Pro",
-          currencyCode: "USD"
+  const connectGoogleAds = useCallback(
+    async (accessToken: string, refreshToken: string): Promise<any> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch("/api/google-ads/connect", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            accessToken,
+            refreshToken,
+          }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to connect to Google Ads");
         }
-      ];
-
-      return mockAccounts;
-    } catch (err: any) {
-      setError(err.message || 'Failed to connect Google Ads account');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Get fraud analysis
-  const analyzeFraud = useCallback(async (
-    customerId: string, 
-    refreshToken: string, 
-    dateRange: string = 'LAST_7_DAYS'
-  ): Promise<FraudAnalysis> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/google-ads/fraud-detection', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customerId,
-          refreshToken,
-          dateRange,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to analyze fraud patterns');
+        return await response.json();
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
       }
+    },
+    []
+  );
 
-      const data = await response.json();
-      return data.analysis;
-    } catch (err: any) {
-      setError(err.message || 'Failed to analyze fraud patterns');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const analyzeFraud = useCallback(
+    async (
+      customerId: string,
+      refreshToken: string,
+      dateRange: string = "LAST_7_DAYS"
+    ): Promise<FraudAnalysis> => {
+      setLoading(true);
+      setError(null);
 
-  // Get negative keyword analysis
-  const analyzeNegativeKeywords = useCallback(async (
-    customerId: string, 
-    refreshToken: string, 
-    dateRange: string = 'LAST_30_DAYS'
-  ): Promise<NegativeKeywordAnalysis> => {
-    setLoading(true);
-    setError(null);
+      try {
+        const response = await fetch("/api/google-ads/fraud-detection", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customerId,
+            refreshToken,
+            dateRange,
+          }),
+        });
 
-    try {
-      const response = await fetch('/api/google-ads/negative-keywords', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customerId,
-          refreshToken,
-          action: 'analyze',
-          dateRange,
-        }),
-      });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || "Failed to analyze fraud patterns"
+          );
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to analyze negative keywords');
+        const data = await response.json();
+        return data.analysis;
+      } catch (err: any) {
+        setError(err.message || "Failed to analyze fraud patterns");
+        throw err;
+      } finally {
+        setLoading(false);
       }
+    },
+    []
+  );
 
-      const data = await response.json();
-      return data.analysis;
-    } catch (err: any) {
-      setError(err.message || 'Failed to analyze negative keywords');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const analyzeNegativeKeywords = useCallback(
+    async (
+      customerId: string,
+      refreshToken: string,
+      dateRange: string = "LAST_30_DAYS"
+    ): Promise<NegativeKeywordAnalysis> => {
+      setLoading(true);
+      setError(null);
 
-  // Add negative keywords
-  const addNegativeKeywords = useCallback(async (
-    customerId: string,
-    refreshToken: string,
-    adGroupId: string,
-    keywords: string[]
-  ): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+      try {
+        const response = await fetch("/api/google-ads/negative-keywords", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customerId,
+            refreshToken,
+            action: "analyze",
+            dateRange,
+          }),
+        });
 
-    try {
-      const response = await fetch('/api/google-ads/negative-keywords', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customerId,
-          refreshToken,
-          action: 'add_negatives',
-          adGroupId,
-          keywords,
-        }),
-      });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || "Failed to analyze negative keywords"
+          );
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add negative keywords');
+        const data = await response.json();
+        return data.analysis;
+      } catch (err: any) {
+        setError(err.message || "Failed to analyze negative keywords");
+        throw err;
+      } finally {
+        setLoading(false);
       }
+    },
+    []
+  );
 
-      return true;
-    } catch (err: any) {
-      setError(err.message || 'Failed to add negative keywords');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const addNegativeKeywords = useCallback(
+    async (
+      customerId: string,
+      refreshToken: string,
+      adGroupId: string,
+      keywords: string[]
+    ): Promise<boolean> => {
+      setLoading(true);
+      setError(null);
 
-  // Get general reports
-  const getReports = useCallback(async (
-    customerId: string,
-    refreshToken: string,
-    reportType: 'click_performance' | 'search_terms' | 'budget_data',
-    dateRange: string = 'LAST_7_DAYS'
-  ): Promise<any> => {
-    setLoading(true);
-    setError(null);
+      try {
+        const response = await fetch("/api/google-ads/negative-keywords", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customerId,
+            refreshToken,
+            action: "add_negatives",
+            adGroupId,
+            keywords,
+          }),
+        });
 
-    try {
-      const response = await fetch('/api/google-ads/reports', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customerId,
-          refreshToken,
-          reportType,
-          dateRange,
-        }),
-      });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to add negative keywords");
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch reports');
+        return true;
+      } catch (err: any) {
+        setError(err.message || "Failed to add negative keywords");
+        throw err;
+      } finally {
+        setLoading(false);
       }
+    },
+    []
+  );
 
-      const data = await response.json();
-      return data.data;
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch reports');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const getReports = useCallback(
+    async (
+      customerId: string,
+      refreshToken: string,
+      reportType: "click_performance" | "search_terms" | "budget_data",
+      dateRange: string = "LAST_7_DAYS"
+    ): Promise<any> => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch("/api/google-ads/reports", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customerId,
+            refreshToken,
+            reportType,
+            dateRange,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to fetch reports");
+        }
+
+        const data = await response.json();
+        return data.data;
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch reports");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     loading,

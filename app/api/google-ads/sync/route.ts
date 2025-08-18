@@ -5,13 +5,10 @@ import GoogleAdsService from "@/lib/google-ads";
 import { config } from "@/lib/config";
 import { supabase } from "@/lib/supabase";
 
-// NOTE: This file had several bugs related to undefined functions.
-// This corrected version fetches the right data and stores it.
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customerId, refreshToken, googleAdsAccountId } = body;
+    const { customerId, refreshToken } = body;
 
     if (!customerId || !refreshToken) {
       return NextResponse.json(
@@ -51,13 +48,6 @@ export async function POST(request: NextRequest) {
       totalConversions,
       fraudClicksDetected,
     });
-
-    // Example of saving a snapshot (you would implement your DB logic here)
-    /*
-    const { error: snapshotError } = await supabase
-      .from('performance_snapshots')
-      .insert({ ... });
-    */
 
     return NextResponse.json({
       success: true,

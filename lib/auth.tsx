@@ -47,14 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        // This is the crucial part. It tells Supabase where to send the user
-        // AFTER a successful login and its own callback are handled.
         redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: "openid email profile https://www.googleapis.com/auth/adwords",
-        queryParams: {
-          access_type: "offline",
-          prompt: "consent", // This forces the consent screen every time, useful for debugging
-        },
+        scopes: "openid email profile",
       },
     });
 
