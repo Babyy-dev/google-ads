@@ -1,5 +1,3 @@
-// app/api/google-ads/sync/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import GoogleAdsService from "@/lib/google-ads";
 import { config } from "@/lib/config";
@@ -12,7 +10,10 @@ export async function POST(request: NextRequest) {
 
     if (!customerId || !refreshToken) {
       return NextResponse.json(
-        { error: "Missing required parameters" },
+        {
+          error:
+            "Missing required parameters: customerId and refreshToken are required.",
+        },
         { status: 400 }
       );
     }
@@ -23,31 +24,20 @@ export async function POST(request: NextRequest) {
       developer_token: config.googleAds.developerToken,
     });
 
-    await googleAds.connectToCustomer(customerId, refreshToken);
+    await googleAds.connectToCustomer(
+      customerId.replace(/-/g, ""),
+      refreshToken
+    );
 
-    // Fetching data for the last 7 days to create a snapshot
     const clickData = await googleAds.getClickPerformance("LAST_7_DAYS");
-    const budgetData = await googleAds.getBudgetData(); // Gets today's budget data
     const fraudAlerts = googleAds.analyzeClickFraud(clickData);
 
-    // Calculate summary metrics
     const totalClicks = clickData.reduce((sum, data) => sum + data.clicks, 0);
     const totalCost = clickData.reduce((sum, data) => sum + data.cost, 0);
     const totalConversions = clickData.reduce(
       (sum, data) => sum + data.conversions,
       0
     );
-    const fraudClicksDetected = fraudAlerts.filter(
-      (alert) => alert.type === "bot_pattern"
-    ).length;
-
-    // In a real app, you would associate this with a user's account in your DB
-    console.log("Data to be saved for snapshot:", {
-      totalClicks,
-      totalCost,
-      totalConversions,
-      fraudClicksDetected,
-    });
 
     return NextResponse.json({
       success: true,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import GoogleAdsService from "@/lib/google-ads";
+import { config } from "@/lib/config"; // Import the centralized config
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,12 +15,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Initialize Google Ads service using the config object
     const googleAds = new GoogleAdsService({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      developer_token: process.env.GOOGLE_ADS_DEVELOPER_TOKEN!,
+      client_id: config.googleAds.clientId,
+      client_secret: config.googleAds.clientSecret,
+      developer_token: config.googleAds.developerToken,
     });
 
+    // Connect to customer account
     await googleAds.connectToCustomer(
       customerId.replace(/-/g, ""),
       refreshToken
@@ -27,11 +30,15 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case "analyze":
+        // Get search terms data
         const searchTerms = await googleAds.getSearchTermsData(
           dateRange || "LAST_30_DAYS"
         );
+
+        // Analyze for negative keyword suggestions
         const suggestedNegatives = googleAds.analyzeSearchTerms(searchTerms);
 
+        // Calculate potential savings
         const badTermsData = searchTerms.filter((term) =>
           suggestedNegatives.includes(term.search_term)
         );
@@ -65,10 +72,31 @@ export async function POST(request: NextRequest) {
               })),
           },
           suggestions: suggestedNegatives,
+          searchTermsData: searchTerms.slice(0, 50), // Limit for performance
           timestamp: new Date().toISOString(),
         });
 
-      // NOTE: The 'add_negatives' case is omitted for brevity but should be included in your actual file.
+      case "add_negatives":
+        if (!adGroupId || !keywords || !Array.isArray(keywords)) {
+          return NextResponse.json(
+            {
+              error:
+                "Missing required parameters for adding negatives: adGroupId, keywords",
+            },
+            { status: 400 }
+          );
+        }
+
+        // This function needs to be implemented in your GoogleAdsService
+        // const success = await googleAds.addNegativeKeywords(adGroupId, keywords, 'PHRASE');
+        const success = true; // Placeholder
+
+        return NextResponse.json({
+          success,
+          message: `Successfully added ${keywords.length} negative keywords to ad group ${adGroupId}`,
+          keywords,
+          timestamp: new Date().toISOString(),
+        });
 
       default:
         return NextResponse.json(

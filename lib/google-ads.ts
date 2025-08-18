@@ -51,19 +51,17 @@ class GoogleAdsService {
 
   async connectToCustomer(
     customerId: string,
-    refreshToken: string,
-    loginCustomerId?: string
+    refreshToken: string
   ): Promise<void> {
     try {
       this.customer = this.client.Customer({
         customer_id: customerId,
-        login_customer_id: loginCustomerId,
         refresh_token: refreshToken,
       });
 
-      await this.customer.query(`
-        SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1
-      `);
+      await this.customer.query(
+        `SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1`
+      );
       console.log(
         `✅ Successfully connected to Google Ads account: ${customerId}`
       );
@@ -100,6 +98,55 @@ class GoogleAdsService {
       console.error("❌ Failed to fetch click performance data:", error);
       throw error;
     }
+  }
+
+  async getSearchTermsData(
+    dateRange: string = "LAST_30_DAYS"
+  ): Promise<SearchTermData[]> {
+    if (!this.customer) throw new Error("Customer not connected.");
+    try {
+      const results = await this.customer.query(`
+        SELECT
+          search_term_view.search_term,
+          metrics.clicks,
+          metrics.impressions,
+          metrics.cost_micros,
+          metrics.conversions,
+          ad_group.name,
+          campaign.name,
+          search_term_view.ad_group
+        FROM search_term_view
+        WHERE segments.date DURING ${dateRange}
+          AND metrics.clicks > 0
+      `);
+
+      return results.map((row: any) => ({
+        search_term: row.search_term_view.search_term,
+        clicks: row.metrics.clicks,
+        impressions: row.metrics.impressions,
+        cost: row.metrics.cost_micros / 1000000,
+        conversions: row.metrics.conversions,
+        match_type: "Unknown",
+        keyword: "N/A",
+        ad_group: row.ad_group.name,
+        campaign: row.campaign.name,
+      }));
+    } catch (error) {
+      console.error("❌ Failed to fetch search terms data:", error);
+      throw error;
+    }
+  }
+
+  analyzeSearchTerms(searchTerms: SearchTermData[]): string[] {
+    const negativeKeywords = new Set<string>();
+
+    for (const term of searchTerms) {
+      if (term.conversions === 0 && term.cost > 10) {
+        negativeKeywords.add(term.search_term);
+      }
+    }
+
+    return Array.from(negativeKeywords);
   }
 
   async getBudgetData(): Promise<any[]> {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import GoogleAdsService from "@/lib/google-ads";
-import { config } from "@/lib/config"; // Import the centralized config
+import { config } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,14 +14,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize Google Ads service using the config object
     const googleAds = new GoogleAdsService({
       client_id: config.googleAds.clientId,
       client_secret: config.googleAds.clientSecret,
       developer_token: config.googleAds.developerToken,
     });
 
-    // Connect to customer account
     await googleAds.connectToCustomer(
       customerId.replace(/-/g, ""),
       refreshToken
@@ -66,27 +64,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-// GET endpoint for testing
-export async function GET() {
-  return NextResponse.json({
-    message: "Google Ads Reports API",
-    endpoints: {
-      POST: "/api/google-ads/reports",
-      parameters: {
-        customerId: "string (required) - Google Ads customer ID",
-        refreshToken: "string (required) - OAuth refresh token",
-        reportType:
-          "string (required) - click_performance | search_terms | budget_data",
-        dateRange: "string (optional) - LAST_7_DAYS | LAST_30_DAYS | TODAY",
-      },
-    },
-    example: {
-      customerId: "1234567890",
-      refreshToken: "your_refresh_token",
-      reportType: "click_performance",
-      dateRange: "LAST_7_DAYS",
-    },
-  });
 }
