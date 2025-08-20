@@ -8,28 +8,41 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { LineChart } from "@/components/charts/line-chart";
-import { BarChart } from "@/components/charts/bar-chart";
 import { useAuth } from "@/lib/auth";
 import { useGoogleAds, FraudAnalysis } from "@/hooks/useGoogleAds";
+
+const initialFraudData: FraudAnalysis = {
+  riskLevel: "low",
+  totalAlerts: 0,
+  highRiskAlerts: 0,
+  mediumRiskAlerts: 0,
+  summary: {
+    totalClicks: 0,
+    totalCost: 0,
+    totalConversions: 0,
+    avgCPC: 0,
+    conversionRate: 0,
+  },
+  alerts: [],
+  recommendations: [],
+};
 
 export default function ClickFraudPage() {
   const { session } = useAuth();
   const { analyzeFraud, loading, error } = useGoogleAds();
   const [isConnected, setIsConnected] = useState(false);
-  const [fraudData, setFraudData] = useState<FraudAnalysis | null>(null);
+  const [fraudData, setFraudData] = useState<FraudAnalysis>(initialFraudData);
+  const [recentAlerts, setRecentAlerts] = useState<any[]>([]);
   const [customerId, setCustomerId] = useState("");
 
   useEffect(() => {
@@ -37,9 +50,21 @@ export default function ClickFraudPage() {
     if (session?.provider_refresh_token && storedCustomerId) {
       setCustomerId(storedCustomerId);
       setIsConnected(true);
-      fetchFraudData(storedCustomerId);
+      fetchDashboardData();
     }
   }, [session]);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch("/api/dashboard/stats");
+      if (response.ok) {
+        const data = await response.json();
+        setRecentAlerts(data.recentAlerts);
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    }
+  };
 
   const fetchFraudData = async (id: string) => {
     if (!session?.provider_refresh_token) return;
@@ -49,6 +74,7 @@ export default function ClickFraudPage() {
         session.provider_refresh_token
       );
       setFraudData(data);
+      await fetchDashboardData(); // Refresh alerts after analysis
     } catch (e) {
       console.error(e);
     }
@@ -103,15 +129,18 @@ export default function ClickFraudPage() {
     );
   }
 
-  if (loading && !fraudData) {
-    return <div>Loading fraud data...</div>;
-  }
-
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      {fraudData && (
-        <>
-          <div className="lg:col-span-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Fraud Analysis</CardTitle>
+          <CardDescription>
+            A real-time overview of detected threats and campaign
+            vulnerabilities.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-5 gap-4">
             <KpiCard
               title="Threats Blocked"
               value={fraudData.totalAlerts.toString()}
@@ -141,9 +170,45 @@ export default function ClickFraudPage() {
               change="across campaigns"
             />
           </div>
-          {/* You can add more dashboard components here using `fraudData` */}
-        </>
-      )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Fraud Alerts</CardTitle>
+          <CardDescription>
+            Live threats detected by AdShield in your campaigns.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>IP Address</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Cost</TableHead>
+                <TableHead>Clicks</TableHead>
+                <TableHead>Risk</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentAlerts.map((alert, index) => (
+                <TableRow key={index}>
+                  <TableCell>{alert.ip}</TableCell>
+                  <TableCell>{alert.location}</TableCell>
+                  <TableCell>{alert.type}</TableCell>
+                  <TableCell>{alert.cost}</TableCell>
+                  <TableCell>{alert.clicks}</TableCell>
+                  <TableCell>{alert.risk}</TableCell>
+                  <TableCell>{alert.status}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

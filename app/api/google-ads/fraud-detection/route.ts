@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import GoogleAdsService from "@/lib/google-ads";
 import { config } from "@/lib/config";
+import { supabase } from "@/lib/supabase";
 
 function generateRecommendations(alerts: any[], budgetData: any[]): string[] {
   const recommendations: string[] = [];
@@ -47,6 +48,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const googleAds = new GoogleAdsService({
       client_id: config.googleAds.clientId,
       client_secret: config.googleAds.clientSecret,
@@ -58,6 +66,19 @@ export async function POST(request: NextRequest) {
     const clickData = await googleAds.getClickPerformance("LAST_7_DAYS");
     const budgetData = await googleAds.getBudgetData();
     const fraudAlerts = googleAds.analyzeClickFraud(clickData);
+
+    if (fraudAlerts.length > 0) {
+      const alertsToStore = fraudAlerts.map((alert) => ({
+        user_id: user.id,
+        alert_type: alert.type,
+        severity: alert.severity,
+        message: alert.message,
+        data: alert.data,
+        is_resolved: false,
+      }));
+
+      await supabase.from("fraud_alerts").insert(alertsToStore);
+    }
 
     const totalClicks = clickData.reduce((sum, data) => sum + data.clicks, 0);
     const totalCost = clickData.reduce((sum, data) => sum + data.cost, 0);

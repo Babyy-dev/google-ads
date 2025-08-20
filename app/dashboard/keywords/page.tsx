@@ -21,13 +21,21 @@ import { useGoogleAds, NegativeKeywordAnalysis } from "@/hooks/useGoogleAds";
 import { useAuth } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 
+const initialAnalysis: NegativeKeywordAnalysis = {
+  totalSearchTerms: 0,
+  suggestedNegatives: 0,
+  potentialMonthlySavings: 0,
+  wastedClicks: 0,
+  topBadTerms: [],
+  suggestions: [],
+};
+
 export default function KeywordsPage() {
   const { session } = useAuth();
   const { analyzeNegativeKeywords, addNegativeKeywords, loading, error } =
     useGoogleAds();
-  const [analysis, setAnalysis] = useState<NegativeKeywordAnalysis | null>(
-    null
-  );
+  const [analysis, setAnalysis] =
+    useState<NegativeKeywordAnalysis>(initialAnalysis);
   const [customerId, setCustomerId] = useState("");
   const [isConnected, setIsConnected] = useState(false);
 
@@ -115,10 +123,6 @@ export default function KeywordsPage() {
     );
   }
 
-  if (loading && !analysis) {
-    return <div>Loading keyword analysis...</div>;
-  }
-
   return (
     <div className="space-y-6">
       <Card>
@@ -131,12 +135,12 @@ export default function KeywordsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-4 gap-4">
-            <div>Total Search Terms: {analysis?.totalSearchTerms}</div>
-            <div>Suggested Negatives: {analysis?.suggestedNegatives}</div>
+            <div>Total Search Terms: {analysis.totalSearchTerms}</div>
+            <div>Suggested Negatives: {analysis.suggestedNegatives}</div>
             <div>
-              Potential Monthly Savings: ${analysis?.potentialMonthlySavings}
+              Potential Monthly Savings: ${analysis.potentialMonthlySavings}
             </div>
-            <div>Wasted Clicks: {analysis?.wastedClicks}</div>
+            <div>Wasted Clicks: {analysis.wastedClicks}</div>
           </div>
         </CardContent>
       </Card>
@@ -159,7 +163,7 @@ export default function KeywordsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analysis?.topBadTerms.map((term, index) => (
+              {analysis.topBadTerms.map((term, index) => (
                 <TableRow key={index}>
                   <TableCell>{term.searchTerm}</TableCell>
                   <TableCell>${term.cost}</TableCell>

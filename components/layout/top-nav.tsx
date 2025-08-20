@@ -7,15 +7,11 @@ import { Logo } from "@/components/branding/logo";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 
-
-
 export function TopNav() {
   const pathname = usePathname();
   const { user, signOut, loading } = useAuth();
-  
-  const publicLinks = [
-    { href: "/", label: "Product" },
-  ];
+
+  const publicLinks = [{ href: "/", label: "Product" }];
 
   const authLinks = [
     { href: "/login", label: "Login" },
@@ -28,7 +24,7 @@ export function TopNav() {
         <Link href={user ? "/dashboard" : "/"} aria-label="AdShield">
           <Logo />
         </Link>
-        
+
         {!loading && (
           <nav className="flex items-center gap-2">
             {!user ? (
@@ -39,7 +35,8 @@ export function TopNav() {
                     href={l.href}
                     className={cn(
                       "rounded-md px-3 py-2 text-sm text-foreground/80 hover:bg-[oklch(0.96_0.07_40)] hover:text-[oklch(0.36_0.12_40)]",
-                      pathname === l.href && "bg-[oklch(0.96_0.07_40)] text-[oklch(0.36_0.12_40)]"
+                      pathname === l.href &&
+                        "bg-[oklch(0.96_0.07_40)] text-[oklch(0.36_0.12_40)]"
                     )}
                   >
                     {l.label}
@@ -51,13 +48,17 @@ export function TopNav() {
                     href={l.href}
                     className={cn(
                       "rounded-md px-3 py-2 text-sm text-foreground/80 hover:bg-[oklch(0.96_0.07_40)] hover:text-[oklch(0.36_0.12_40)]",
-                      pathname === l.href && "bg-[oklch(0.96_0.07_40)] text-[oklch(0.36_0.12_40)]"
+                      pathname === l.href &&
+                        "bg-[oklch(0.96_0.07_40)] text-[oklch(0.36_0.12_40)]"
                     )}
                   >
                     {l.label}
                   </Link>
                 ))}
-                <Link href="/signup" className="ml-2 rounded-md bg-[oklch(0.72_0.18_40)] px-3 py-2 text-sm text-[oklch(0.98_0_0)] hover:opacity-90">
+                <Link
+                  href="/signup"
+                  className="ml-2 rounded-md bg-[oklch(0.72_0.18_40)] px-3 py-2 text-sm text-[oklch(0.98_0_0)] hover:opacity-90"
+                >
                   Get started
                 </Link>
               </>
@@ -67,7 +68,8 @@ export function TopNav() {
                   href="/dashboard"
                   className={cn(
                     "rounded-md px-3 py-2 text-sm text-foreground/80 hover:bg-[oklch(0.96_0.07_40)] hover:text-[oklch(0.36_0.12_40)]",
-                    pathname.startsWith("/dashboard") && "bg-[oklch(0.96_0.07_40)] text-[oklch(0.36_0.12_40)]"
+                    pathname.startsWith("/dashboard") &&
+                      "bg-[oklch(0.96_0.07_40)] text-[oklch(0.36_0.12_40)]"
                   )}
                 >
                   Dashboard
@@ -88,10 +90,10 @@ export function TopNav() {
                       </div>
                     )}
                     <span className="text-sm text-foreground/70 hidden sm:block">
-                      {user.user_metadata?.full_name || user.user_metadata?.name || user.email}
+                      {user.email}
                     </span>
                   </div>
-                  <Button 
+                  <Button
                     onClick={signOut}
                     variant="outline"
                     size="sm"
@@ -108,4 +110,3 @@ export function TopNav() {
     </header>
   );
 }
-
